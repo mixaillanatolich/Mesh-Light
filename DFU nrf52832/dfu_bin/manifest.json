@@ -1,0 +1,24 @@
+{
+    "manifest": {
+        "application": {
+            "bin_file": "light_nrf52832_xxAA_s132_7.0.1.bin",
+            "dat_file": "light_nrf52832_xxAA_s132_7.0.1.dat",
+            "init_packet_data": {
+                "application_id": 1,
+                "application_version": 1,
+                "bootloader_id": 65280,
+                "company_id": 61605,
+                "device_revision": 65535,
+                "device_type": 65535,
+                "ext_packet_id": 2,
+                "firmware_hash": "4387a5c600cc8a9d437e549f7781967570ddf303169e596d054dc1d2451f45d1",
+                "firmware_length": 130800,
+                "softdevice_req": [
+                    157
+                ],
+                "start_addr": 4294967295
+            }
+        },
+        "dfu_version": 0.8
+    }
+}
