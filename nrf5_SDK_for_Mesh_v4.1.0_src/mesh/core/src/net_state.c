@@ -651,21 +651,17 @@ uint32_t net_state_seqnum_alloc(uint32_t * p_seqnum)
         _ENABLE_IRQS(was_masked);
 
         return NRF_SUCCESS;
-    }
-    else
-    {
+    } else {
         
-        /*
-        __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Dirty hack\n");
-        //TODO dirty hack
+        //TODO dirty hack for fix DFU low speed on 45%
         if (!!m_status.is_seqnum_allocation_in_progress) {
+            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "!m_status.is_synchronized2. dirty hack\n");
             m_net_state.seqnum_max_available += NETWORK_SEQNUM_FLASH_BLOCK_SIZE;
         } else {
             seqnum_block_allocate();
         }
-        */
 
-        seqnum_block_allocate();
+        //seqnum_block_allocate();
         return NRF_ERROR_FORBIDDEN;
     }
 }

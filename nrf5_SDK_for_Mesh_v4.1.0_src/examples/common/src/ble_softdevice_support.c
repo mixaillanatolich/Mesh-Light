@@ -208,33 +208,27 @@ static void update_relay_config(ble_conn_params_evt_type_t evt) {
 
     if (evt == BLE_CONN_PARAMS_EVT_SUCCEEDED) {
         NRF_MESH_ERROR_CHECK(mesh_opt_core_adv_get(CORE_TX_ROLE_RELAY, &relay_config));
-        __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "relay before: %d - %d \n",relay_config.enabled, relay_config.tx_count);
+        __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "current relay: %d - %d \n",relay_config.enabled, relay_config.tx_count);
 
-        if (!relay_config.enabled) {
-            relay_config.enabled = true;
-            relay_mode_was_enabled = true;
-        }
+        relay_mode_was_enabled = !relay_config.enabled;
+        relay_config.enabled = true;
 
-        if (relay_config.tx_count < 2) {
+        if (relay_config.tx_count == 1) {
             relay_config.tx_count = 2;
             relay_tx_count_was_changed = true;
         }
 
         if (relay_mode_was_enabled || relay_tx_count_was_changed) {
             NRF_MESH_ERROR_CHECK(mesh_opt_core_adv_set(CORE_TX_ROLE_RELAY, &relay_config));
+            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "relay after: %d - %d \n",relay_config.enabled, relay_config.tx_count);
         }
-
-        __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "relay after: %d - %d \n",relay_config.enabled, relay_config.tx_count);
 
     } else if (evt == BLE_CONN_PARAMS_EVT_DISCONNECTED) {
         if (relay_mode_was_enabled || relay_tx_count_was_changed) {
             NRF_MESH_ERROR_CHECK(mesh_opt_core_adv_get(CORE_TX_ROLE_RELAY, &relay_config));
-            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "relay before: %d - %d \n",relay_config.enabled, relay_config.tx_count);
+            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "current relay: %d - %d \n",relay_config.enabled, relay_config.tx_count);
 
-            if (relay_mode_was_enabled) {
-                relay_config.enabled = false;
-                relay_mode_was_enabled = false;
-            }
+            relay_config.enabled = !relay_mode_was_enabled;
 
             if (relay_tx_count_was_changed && relay_config.tx_count == 2) {
                 relay_config.tx_count = 1;
@@ -246,7 +240,6 @@ static void update_relay_config(ble_conn_params_evt_type_t evt) {
             __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "relay after: %d - %d \n",relay_config.enabled, relay_config.tx_count);
         }
     }
-
 }
 
 #if MESH_FEATURE_GATT_ENABLED
