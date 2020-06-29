@@ -65,6 +65,9 @@
 #include "replay_cache.h"
 #include "utils.h"
 
+#include "mesh_stack.h"
+#include "mesh_opt_core.h"
+
 /** Configuration required to run the support module */
 STATIC_ASSERT(NRF_SDH_ENABLED, "NRF_SDH_ENABLED not enabled.");
 STATIC_ASSERT(NRF_SDH_BLE_ENABLED, "NRF_SDH_BLE_ENABLED not enabled.");
@@ -91,6 +94,8 @@ static bool         device_connected;
 static timestamp_t  device_connected_time;
 static bool         device_connected_event_was_sent;
 
+static void update_relay_config(ble_conn_params_evt_type_t evt);
+
 static void on_sd_evt(uint32_t sd_evt, void * p_context)
 {
     UNUSED_VARIABLE(p_context);
@@ -111,10 +116,12 @@ static void on_conn_params_evt(ble_conn_params_evt_t * p_evt) {
         device_connected = true;
         device_connected_time = timer_now();
         device_connected_event_was_sent = false;
+        update_relay_config(BLE_CONN_PARAMS_EVT_SUCCEEDED);
     } else if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_DISCONNECTED) {
         __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "device disconnected\n");
         replay_cache_clear();
         device_connected = false;
+        update_relay_config(BLE_CONN_PARAMS_EVT_DISCONNECTED);
     }
 }
 
@@ -189,6 +196,57 @@ void ble_stack_init(void)
 
     /* Register Mesh handler for SoC events. */
     NRF_SDH_SOC_OBSERVER(mesh_observer, NRF_SDH_BLE_STACK_OBSERVER_PRIO, on_sd_evt, NULL);
+}
+
+static mesh_opt_core_adv_t relay_config;
+static bool relay_mode_was_enabled;
+static bool relay_tx_count_was_changed;
+
+static void update_relay_config(ble_conn_params_evt_type_t evt) {
+
+    if (!mesh_stack_is_device_provisioned()) { return; }
+
+    if (evt == BLE_CONN_PARAMS_EVT_SUCCEEDED) {
+        NRF_MESH_ERROR_CHECK(mesh_opt_core_adv_get(CORE_TX_ROLE_RELAY, &relay_config));
+        __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "relay before: %d - %d \n",relay_config.enabled, relay_config.tx_count);
+
+        if (!relay_config.enabled) {
+            relay_config.enabled = true;
+            relay_mode_was_enabled = true;
+        }
+
+        if (relay_config.tx_count < 2) {
+            relay_config.tx_count = 2;
+            relay_tx_count_was_changed = true;
+        }
+
+        if (relay_mode_was_enabled || relay_tx_count_was_changed) {
+            NRF_MESH_ERROR_CHECK(mesh_opt_core_adv_set(CORE_TX_ROLE_RELAY, &relay_config));
+        }
+
+        __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "relay after: %d - %d \n",relay_config.enabled, relay_config.tx_count);
+
+    } else if (evt == BLE_CONN_PARAMS_EVT_DISCONNECTED) {
+        if (relay_mode_was_enabled || relay_tx_count_was_changed) {
+            NRF_MESH_ERROR_CHECK(mesh_opt_core_adv_get(CORE_TX_ROLE_RELAY, &relay_config));
+            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "relay before: %d - %d \n",relay_config.enabled, relay_config.tx_count);
+
+            if (relay_mode_was_enabled) {
+                relay_config.enabled = false;
+                relay_mode_was_enabled = false;
+            }
+
+            if (relay_tx_count_was_changed && relay_config.tx_count == 2) {
+                relay_config.tx_count = 1;
+                relay_tx_count_was_changed = false;
+            }
+
+            NRF_MESH_ERROR_CHECK(mesh_opt_core_adv_set(CORE_TX_ROLE_RELAY, &relay_config));
+
+            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "relay after: %d - %d \n",relay_config.enabled, relay_config.tx_count);
+        }
+    }
+
 }
 
 #if MESH_FEATURE_GATT_ENABLED
