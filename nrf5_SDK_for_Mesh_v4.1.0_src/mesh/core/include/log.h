@@ -257,6 +257,23 @@ void log_vprintf(uint32_t dbg_level, const char * p_filename, uint16_t line, uin
  * @param[in] level  Log level
  * @param[in] ...    Arguments passed on to the callback (similar to @c printf)
  */
+#define __LOG_RELEASE(source, level, ...)                                       \
+    if ((source & g_log_dbg_msk) && level <= g_log_dbg_lvl)             \
+    {                                                                   \
+        log_printf(level, __FILENAME__, __LINE__, log_timestamp_get(), __VA_ARGS__); \
+    }
+
+
+#if NRF_MESH_LOG_ENABLE_RELEASE
+#define __LOG(...)
+#define __LOG_XB(...)
+#else
+/**
+ * Prints a log message.
+ * @param[in] source Log source
+ * @param[in] level  Log level
+ * @param[in] ...    Arguments passed on to the callback (similar to @c printf)
+ */
 #define __LOG(source, level, ...)                                       \
     if ((source & g_log_dbg_msk) && level <= g_log_dbg_lvl)             \
     {                                                                   \
@@ -287,7 +304,7 @@ void log_vprintf(uint32_t dbg_level, const char * p_filename, uint16_t line, uin
         array_text[_array_len * 2] = 0;                                     \
         log_printf(level, __FILENAME__, __LINE__, log_timestamp_get(), "%s: %s\n", msg, array_text); \
     }
-
+#endif
 #else
 #define __LOG_INIT(...)
 #define __LOG(...)

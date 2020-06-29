@@ -156,18 +156,18 @@ static const uint32_t * optimal_bank_address(void)
     uint32_t dummy;
     ERROR_CHECK(mesh_stack_persistence_flash_usage(&p_start, &dummy));
 
-    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "p_start %X\n", (intptr_t)p_start);
-    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "dummy %X\n", dummy);
-    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "CODE_START %X\n", CODE_START);
-    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "CODE_END %X\n", CODE_END);
-    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "CODE_SIZE %X\n", CODE_SIZE);
+    __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "p_start %X\n", (intptr_t)p_start);
+    __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "dummy %X\n", dummy);
+    __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "CODE_START %X\n", CODE_START);
+    __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "CODE_END %X\n", CODE_END);
+    __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "CODE_SIZE %X\n", CODE_SIZE);
 
     uint32_t middle_of_app_area = (CODE_START + (intptr_t) p_start) / 2;
-    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "middle_of_app_area %X\n", middle_of_app_area);
+    __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "middle_of_app_area %X\n", middle_of_app_area);
 
     /* The bank can't start in the middle of the application code, and should be page aligned: */
     const uint32_t *bank_address = (const uint32_t *) ALIGN_VAL(MAX(middle_of_app_area, CODE_END), PAGE_SIZE);
-    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "bank_address %X\n", bank_address);
+    __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "bank_address %X\n", bank_address);
     
     return bank_address;
 }
@@ -540,7 +540,7 @@ static void app_model_init(void)
 /*************************************************************************************************/
 
 static void node_reset(void) {
-    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "----- Node reset  -----\n");
+    __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "----- Node reset  -----\n");
     /* This function may return if there are ongoing flash operations. */
     hal_led_blink_ms(LEDS_MASK, LED_BLINK_INTERVAL_MS, LED_BLINK_CNT_RESET);
     mesh_stack_device_reset();
@@ -690,7 +690,7 @@ static void provisioning_aborted_cb(void)
 
 static void unicast_address_print(void)
 {
-    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Node Address: 0x%04x \n", node_address.address_start);
+    __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "Node Address: 0x%04x \n", node_address.address_start);
 }
 
 static void provisioning_complete_cb(void)
@@ -782,8 +782,7 @@ static void app_start(void) {
     load_led_config();
     apply_led_config();
     
-
-    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Starting application \n");
+    __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "Starting application \n");
 
     /* Install rx callback to intercept incoming ADV packets so that they can be passed to the
     EnOcean packet processor */
@@ -821,12 +820,12 @@ static void app_mesh_core_event_cb(const nrf_mesh_evt_t * p_evt)
         case NRF_MESH_EVT_DFU_FIRMWARE_OUTDATED:
         case NRF_MESH_EVT_DFU_FIRMWARE_OUTDATED_NO_AUTH:
 
-             __LOG(LOG_SRC_APP, LOG_LEVEL_DBG1, "Mesh evt: NRF_MESH_EVT_DFU_FIRMWARE_OUTDATED \n");
+             __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_DBG1, "Mesh evt: NRF_MESH_EVT_DFU_FIRMWARE_OUTDATED \n");
 
             if (fw_updated_event_is_for_me(&p_evt->params.dfu))
             {
                 const uint32_t * bank_address = optimal_bank_address();
-                __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Requesting DFU transfer with bank at 0x%p\n", bank_address);
+                __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "Requesting DFU transfer with bank at 0x%p\n", bank_address);
 
                 ERROR_CHECK(nrf_mesh_dfu_request(p_evt->params.dfu.fw_outdated.transfer.dfu_type,
                                                  &p_evt->params.dfu.fw_outdated.transfer.id,
@@ -858,18 +857,18 @@ static void app_mesh_core_event_cb(const nrf_mesh_evt_t * p_evt)
             break;
 
         case NRF_MESH_EVT_DFU_START:
-            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Mesh evt: NRF_MESH_EVT_DFU_START \n");
+            __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "Mesh evt: NRF_MESH_EVT_DFU_START \n");
             hal_led_mask_set(LEDS_MASK_DFU_RUNNING, true);
             break;
 
         case NRF_MESH_EVT_DFU_END:
-            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Mesh evt: NRF_MESH_EVT_DFU_END \n");
+            __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "Mesh evt: NRF_MESH_EVT_DFU_END \n");
             hal_led_mask_set(LEDS_MASK, false); /* Turn off all LEDs */
             hal_led_mask_set(LEDS_MASK_DFU_ENDED, true);
             break;
 
         case NRF_MESH_EVT_DFU_BANK_AVAILABLE:
-            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Mesh evt: NRF_MESH_EVT_DFU_BANK_AVAILABLE \n");
+            __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "Mesh evt: NRF_MESH_EVT_DFU_BANK_AVAILABLE \n");
             hal_led_mask_set(LEDS_MASK, false); /* Turn off all LEDs */
             ERROR_CHECK(nrf_mesh_dfu_bank_flash(p_evt->params.dfu.bank.transfer.dfu_type));
             break;
@@ -893,8 +892,8 @@ static void mesh_init(void)
     switch (status)
     {
         case NRF_ERROR_INVALID_DATA:
-            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Data in the persistent memory was corrupted. Device starts as unprovisioned.\n");
-            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Reset device before start provisioning.\n");
+            __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "Data in the persistent memory was corrupted. Device starts as unprovisioned.\n");
+            __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "Reset device before start provisioning.\n");
             factory_reset();
             break;
         case NRF_SUCCESS:
@@ -911,8 +910,8 @@ static void mesh_init(void)
 static void initialize(void)
 {
     __LOG_INIT(LOG_SRC_APP | LOG_SRC_ACCESS | LOG_SRC_BEARER | LOG_SRC_DFU, LOG_LEVEL_INFO, LOG_CALLBACK_DEFAULT);
-    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "----- BLE Mesh Light -----\n");
-    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "App version: %x (build: %x)\n", app_version, app_build);
+    __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "----- BLE Mesh Light -----\n");
+    __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "App version: %x (build: %x)\n", app_version, app_build);
 
     pwm_utils_init(&m_pwm);
     reset_wdt_timer();
@@ -968,8 +967,6 @@ static void start(void)
 
         unicast_address_print();
 
-        __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Node Address: 0x%04x \n", node_address.address_start);
-
        //TODO make random
         app_config_health_model_publication(node_address);
     }
@@ -1008,8 +1005,6 @@ int main(void) {
         bool done = nrf_mesh_process();
         if (done) {
             (void)sd_app_evt_wait();
-        } else {
-            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "========= Test Point ===========\n");
         }
 
         serial_commands_process();
@@ -1017,14 +1012,6 @@ int main(void) {
         reset_wdt_timer();
 
         check_commissioning_state();
-
-
-        // Just for test
-//        if (timer_diff(timer_now(), event_time) > SEC_TO_US(20) && !once_event) {
-//            once_event = true;
-//           // app_level_current_value_publish(&m_level_server_0);
-//           button_event_handler_irq(0);
-//        }
 
     }
 }

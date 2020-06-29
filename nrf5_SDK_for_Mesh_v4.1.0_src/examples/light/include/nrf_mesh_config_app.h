@@ -46,6 +46,9 @@
  * @{
  */
 
+#define NRF_MESH_LOG_ENABLE 1
+#define NRF_MESH_LOG_ENABLE_RELEASE 0
+
 /**
  * @defgroup DEVICE_CONFIG Device configuration
  *
