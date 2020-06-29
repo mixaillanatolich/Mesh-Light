@@ -188,8 +188,7 @@ static void transition_complete_cb(const app_transition_t * p_transition)
     app_onoff_server_t * p_app = transition_to_app(p_transition);
     app_transition_params_t * p_params = app_transition_ongoing_get(&p_app->state.transition);
 
-    if (p_app->state.present_onoff != p_app->state.target_onoff)
-    {
+  //  if (p_app->state.present_onoff != p_app->state.target_onoff) {
         p_app->state.present_onoff = p_app->state.target_onoff;
 
         onoff_current_value_update(p_app);
@@ -200,7 +199,7 @@ static void transition_complete_cb(const app_transition_t * p_transition)
                     .remaining_time_ms = 0
                 };
         (void) generic_onoff_server_status_publish(&p_app->server, &status);
-    }
+ //   }
 
     /* Inform the application that the transition is complete */
     if (p_app->onoff_transition_cb != NULL)
