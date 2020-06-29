@@ -36,6 +36,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifndef BLE_SOFTDEVICE_SUPPORT__
 #define BLE_SOFTDEVICE_SUPPORT__
@@ -75,6 +76,10 @@ void gap_params_init(void);
  * is failed.
  */
 void conn_params_init(void);
+
+bool need_send_welcome_event();
+
+bool device_is_connected();
 
 /**
  * @}

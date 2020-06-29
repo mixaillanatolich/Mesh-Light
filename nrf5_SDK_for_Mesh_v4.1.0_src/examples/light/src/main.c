@@ -114,6 +114,12 @@ static led_config_t led1_config;
 static timestamp_t commissioning_start_time = 0;
 
 static uint8_t configure_finished_successfull;
+static uint8_t random_start_publish_delay = 0;
+
+static bool need_status_publish;
+static bool need_level_publish;
+
+static bool health_publish_started = false;
 
 static base_communication_server_t m_base_communication_command_server;
 static base_communication_client_t m_base_communication_command_client;
@@ -721,6 +727,20 @@ static void models_init_cb(void)
     app_model_init();
 }
 
+static void random_delay() {
+    ble_gap_addr_t ble_addr;
+    sd_ble_gap_addr_get(&ble_addr);
+    uint8_t sum = 0;
+    sum += ble_addr.addr[0];
+    sum += ble_addr.addr[1];
+    sum += ble_addr.addr[2];
+    sum += ble_addr.addr[3];
+    sum += ble_addr.addr[4];
+    sum += ble_addr.addr[5];
+    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "random delay %d - %d\n", sum, sum/14);
+    random_start_publish_delay = sum/14;
+}
+
 /********** WDT Timer ***********/
 void wdt_timer_init(void) {
     //Configure Watchdog. a) Pause watchdog while the CPU is halted by the debugger.  b) Keep the watchdog running while the CPU is sleeping.
@@ -734,6 +754,45 @@ static void reset_wdt_timer(void) {
     NRF_WDT->RR[0] = WDT_RR_RR_Reload;
 }
 
+
+/********** checks ***********/
+
+
+static void check_commissioning_state() {
+
+    if (commissioning_start_time == 0) return;
+
+    if (timer_diff(timer_now(), commissioning_start_time) > SEC_TO_US(30)) {
+        commissioning_start_time = 0;
+        factory_reset();
+    }
+} 
+
+static void check_health_server_start() {
+    if (!health_publish_started && m_device_provisioned && timer_now() > SEC_TO_US(random_start_publish_delay) ) {
+        __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "health_publish_started\n");
+        health_publish_started = true;
+        app_config_health_model_publication(node_address);
+    }
+
+    if (m_device_provisioned && need_send_welcome_event()) {
+        need_status_publish = true;
+        schedule_event(4);
+    }
+}
+
+static void check_send_event() {
+    if (need_status_publish) {
+        need_status_publish = false;
+        uint32_t res = app_onoff_status_publish(&m_onoff_server_0);
+        __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "simple_on_off_server_status_publish res: %x\n",res);
+    } else if (need_level_publish) {
+        need_level_publish = false;
+        uint32_t res = app_level_current_value_publish(&m_level_server_0);
+        __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "simple_level_server_status_publish res: %x\n",res);
+    }
+}
+
 /********** App scheduler ***********/
 
 /* Select max event size. This must be large enough for app timer events as well.
@@ -745,37 +804,26 @@ static void reset_wdt_timer(void) {
 
 
 static void scheduled_event_handler(void * p_event_data, uint16_t event_size) {
-    uint8_t * key = (uint8_t *) p_event_data;
-    uint32_t button_number = *key;
-    if (button_number >= 0 && button_number <= 3) {
-        button_event_handler(button_number);
-    } else {
-        app_level_current_value_publish(&m_level_server_0);
-        __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Op! %x\n", button_number);
+    uint8_t * event = (uint8_t *) p_event_data;
+    uint32_t event_id = *event;
+    if (event_id >= 0 && event_id <= 3) {
+        button_event_handler(event_id);
+    } else if (event_id == 4) {
+        check_send_event();
     }
 }
 
 static void button_event_handler_irq(uint32_t button_number) {
-    static uint8_t bt_num;
-    bt_num = button_number;
-    app_sched_event_put((void *)&bt_num, sizeof(bt_num), scheduled_event_handler);
+    schedule_event(button_number);
 }
 
-
-
+void schedule_event(uint32_t event_id) {
+    static uint8_t event;
+    event = event_id;
+    app_sched_event_put((void *)&event, sizeof(event), scheduled_event_handler);
+}
 
 /********** init and setup ***********/
-
-
-static void check_commissioning_state() {
-
-    if (commissioning_start_time == 0) return;
-
-    if (timer_diff(timer_now(), commissioning_start_time) > SEC_TO_US(33)) {
-        commissioning_start_time = 0;
-        factory_reset();
-    }
-} 
 
 static void app_start(void) {
 
@@ -945,8 +993,7 @@ static void start(void)
 {
     rtt_input_enable(app_rtt_input_handler, RTT_INPUT_POLL_PERIOD_MS);
 
-    if (!m_device_provisioned)
-    {
+    if (!m_device_provisioned) {
         static const uint8_t static_auth_data[NRF_MESH_KEY_SIZE] = STATIC_AUTH_DATA;
         mesh_provisionee_start_params_t prov_start_params =
         {
@@ -959,16 +1006,13 @@ static void start(void)
             .p_device_uri = EX_URI_PET_PROJECT
         };
         ERROR_CHECK(mesh_provisionee_prov_start(&prov_start_params));
-    }
-    else
-    {
+    } else {
 
         dsm_local_unicast_addresses_get(&node_address);
 
         unicast_address_print();
 
-       //TODO make random
-        app_config_health_model_publication(node_address);
+        random_delay();
     }
 
     mesh_app_uuid_print(nrf_mesh_configure_device_uuid_get());
@@ -1013,6 +1057,7 @@ int main(void) {
 
         check_commissioning_state();
 
+        check_health_server_start();
     }
 }
 
@@ -1028,8 +1073,8 @@ storage enocean devices
 
 uart communication (refactor)
 
-on/off PWM Feature
-on/off serial Feature
 on/off enocean Feature
 
+
+open -n -a /Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.50/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.50.app
 */

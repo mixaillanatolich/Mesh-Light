@@ -211,7 +211,7 @@ static void transition_complete_cb(const app_transition_t * p_transition)
 
 /***** Interface functions *****/
 
-void app_onoff_status_publish(app_onoff_server_t * p_app)
+uint32_t app_onoff_status_publish(app_onoff_server_t * p_app)
 {
     app_transition_abort(&p_app->state.transition);
     p_app->onoff_get_cb(p_app, &p_app->state.present_onoff);
@@ -222,7 +222,7 @@ void app_onoff_status_publish(app_onoff_server_t * p_app)
                 .target_on_off = p_app->state.target_onoff,
                 .remaining_time_ms = 0
             };
-    (void) generic_onoff_server_status_publish(&p_app->server, &status);
+    return generic_onoff_server_status_publish(&p_app->server, &status);
 }
 
 uint32_t app_onoff_init(app_onoff_server_t * p_app, uint8_t element_index)

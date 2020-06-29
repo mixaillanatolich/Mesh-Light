@@ -62,6 +62,9 @@
 #include "mesh_adv.h"
 #include "log.h"
 
+#include "replay_cache.h"
+#include "utils.h"
+
 /** Configuration required to run the support module */
 STATIC_ASSERT(NRF_SDH_ENABLED, "NRF_SDH_ENABLED not enabled.");
 STATIC_ASSERT(NRF_SDH_BLE_ENABLED, "NRF_SDH_BLE_ENABLED not enabled.");
@@ -83,6 +86,11 @@ STATIC_ASSERT(NRF_SDH_BLE_GATT_MAX_MTU_SIZE >= 69, "Maximum GATT MTU size shall 
         (_name).conn_sup_timeout  = CONN_SUP_TIMEOUT; \
     } while (0)
 
+
+static bool         device_connected;
+static timestamp_t  device_connected_time;
+static bool         device_connected_event_was_sent;
+
 static void on_sd_evt(uint32_t sd_evt, void * p_context)
 {
     UNUSED_VARIABLE(p_context);
@@ -91,19 +99,22 @@ static void on_sd_evt(uint32_t sd_evt, void * p_context)
 }
 
 #if MESH_FEATURE_GATT_ENABLED
-static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
-{
+static void on_conn_params_evt(ble_conn_params_evt_t * p_evt) {
     uint32_t err_code;
 
-    if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED)
-    {
+    if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED) {
         err_code = sd_ble_gap_disconnect(p_evt->conn_handle,
                                          BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
         APP_ERROR_CHECK(err_code);
-    }
-    else if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_SUCCEEDED)
-    {
+    } else if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_SUCCEEDED) {
         __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Successfully updated connection parameters\n");
+        device_connected = true;
+        device_connected_time = timer_now();
+        device_connected_event_was_sent = false;
+    } else if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_DISCONNECTED) {
+        __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "device disconnected\n");
+        replay_cache_clear();
+        device_connected = false;
     }
 }
 
@@ -241,4 +252,17 @@ void conn_params_init(void)
     err_code = ble_conn_params_init(&cp_init);
     APP_ERROR_CHECK(err_code);
 }
+
+bool need_send_welcome_event() {
+    if (!device_connected_event_was_sent && device_connected && timer_diff(timer_now(), device_connected_time) > SEC_TO_US(5)) {
+        device_connected_event_was_sent = true;
+        return true;
+    }
+    return false;
+} 
+
+bool device_is_connected() {
+    return device_connected;
+}
+
 #endif /* MESH_FEATURE_GATT_ENABLED */

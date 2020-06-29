@@ -198,7 +198,7 @@ struct __app_onoff_server_t
  *
  * @param[in] p_app             Pointer to [app_onoff_server_t](@ref __app_onoff_server_t) context.
  */
-void app_onoff_status_publish(app_onoff_server_t * p_app);
+uint32_t app_onoff_status_publish(app_onoff_server_t * p_app);
 
 /** Initializes the behavioral module for the generic OnOff model
  *

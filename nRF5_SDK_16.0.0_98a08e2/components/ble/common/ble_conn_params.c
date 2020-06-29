@@ -435,6 +435,16 @@ static void on_disconnect(ble_evt_t const * p_ble_evt)
         }
 
         instance_free(p_instance);
+
+        // Notify the application that the disconnected
+        if (m_conn_params_config.evt_handler != NULL)
+        {
+            ble_conn_params_evt_t evt;
+
+            evt.evt_type = BLE_CONN_PARAMS_EVT_DISCONNECTED;
+            evt.conn_handle = conn_handle;
+            m_conn_params_config.evt_handler(&evt);
+        }
     }
 }
 

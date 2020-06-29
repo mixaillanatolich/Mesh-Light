@@ -61,7 +61,8 @@ extern "C" {
 typedef enum
 {
     BLE_CONN_PARAMS_EVT_FAILED,                                     //!< Negotiation procedure failed.
-    BLE_CONN_PARAMS_EVT_SUCCEEDED                                   //!< Negotiation procedure succeeded.
+    BLE_CONN_PARAMS_EVT_SUCCEEDED,                                   //!< Negotiation procedure succeeded.
+    BLE_CONN_PARAMS_EVT_DISCONNECTED
 } ble_conn_params_evt_type_t;
 
 /**@brief Connection Parameters Module event. */
