@@ -91,10 +91,18 @@ extern "C" {
 
 
 /**@brief PWM instance default configuration (1 channel). */
-#define APP_PWM_DEFAULT_CONFIG_1CH(period_in_us, pin)                                  \
+#define APP_PWM_DEFAULT_CONFIG_1CH_LOW(period_in_us, pin)                                  \
     {                                                                                  \
         .pins            = {pin, APP_PWM_NOPIN},                                       \
         .pin_polarity    = {APP_PWM_POLARITY_ACTIVE_LOW, APP_PWM_POLARITY_ACTIVE_LOW}, \
+        .num_of_channels = 1,                                                          \
+        .period_us       = period_in_us                                                \
+    }
+
+#define APP_PWM_DEFAULT_CONFIG_1CH_HIGH(period_in_us, pin)                                  \
+    {                                                                                  \
+        .pins            = {pin, APP_PWM_NOPIN},                                       \
+        .pin_polarity    = {APP_PWM_POLARITY_ACTIVE_HIGH, APP_PWM_POLARITY_ACTIVE_HIGH}, \
         .num_of_channels = 1,                                                          \
         .period_us       = period_in_us                                                \
     }

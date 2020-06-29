@@ -219,7 +219,7 @@ static void app_level_server_transition_cb(const app_level_server_t * p_server,
  * between 0 and pwm_utils_contex_t:pwm_ticks_max.
  */
 static APP_PWM_INSTANCE(PWM0, 1);
-static app_pwm_config_t m_pwm0_config = APP_PWM_DEFAULT_CONFIG_1CH(200, BSP_LED_0);
+static app_pwm_config_t m_pwm0_config = APP_PWM_DEFAULT_CONFIG_1CH_LOW(200, BSP_LED_0);
 static pwm_utils_contex_t m_pwm = {
                                     .p_pwm = &PWM0,
                                     .p_pwm_config = &m_pwm0_config,
