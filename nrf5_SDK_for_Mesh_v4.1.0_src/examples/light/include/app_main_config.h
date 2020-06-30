@@ -28,6 +28,8 @@
 #define LEDS_MASK_DFU_RUNNING   (BSP_LED_2_MASK)
 #define LEDS_MASK_DFU_ENDED     (BSP_LED_1_MASK)
 
+#define NO_COMMISSIONING_TIMEOUT 1
+
 /******** Storage definitions *********/
 #define APP_FLASH_PAGE_COUNT           (1)
 #define LED1_CONFIG_ENTRY_HANDLE          (0x00001)

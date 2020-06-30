@@ -43,7 +43,6 @@
       <file file_name="../common/src/assertion_handler_weak.c" />
       <file file_name="include/sdk_config.h" />
       <file file_name="../common/src/app_onoff.c" />
-      <file file_name="../../models/model_spec/generic_onoff/src/generic_onoff_server.c" />
       <file file_name="../common/src/simple_hal.c" />
       <file file_name="src/app_config_models.c" />
       <file file_name="src/flash_helper.c" />
@@ -186,7 +185,6 @@
       <file file_name="../../models/foundation/health/src/health_server.c" />
     </folder>
     <folder Name="Other">
-      <file file_name="../../models/model_spec/generic_level/src/generic_level_server.c" />
       <file file_name="../../models/model_spec/common/src/model_common.c" />
       <file file_name="../../external/app_timer/app_timer_mesh.c" />
       <file file_name="../../external/app_timer/app_timer_workaround.c" />
@@ -203,6 +201,10 @@
       <file file_name="src/serial_commands.c" />
       <file file_name="src/serial_fifo.c" />
       <file file_name="src/serial.c" />
+    </folder>
+    <folder Name="Models">
+      <file file_name="../../models/model_spec/generic_level/src/generic_level_server.c" />
+      <file file_name="../../models/model_spec/generic_onoff/src/generic_onoff_server.c" />
     </folder>
   </project>
   <configuration

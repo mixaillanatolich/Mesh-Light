@@ -419,7 +419,7 @@ static uint8_t base_communication_command_cb(const base_communication_server_t *
 
         fwid_t* p_fwid = nrf_mesh_dfu_current_fwid_get();
 
-        static uint8_t msg[18];
+        static uint8_t msg[24];
         msg[0] = configure_finished_successfull;
         msg[1] = app_version;
         msg[2] = (app_build & 0xff);
@@ -443,8 +443,17 @@ static uint8_t base_communication_command_cb(const base_communication_server_t *
         msg[16] = (uint8_t)(p_fwid->app.app_version>>16);
         msg[17] = (uint8_t)(p_fwid->app.app_version>>24);
         
+        ble_gap_addr_t ble_addr;
+        sd_ble_gap_addr_get(&ble_addr);
+        msg[18] = ble_addr.addr[0];
+        msg[19] = ble_addr.addr[1];
+        msg[20] = ble_addr.addr[2];
+        msg[21] = ble_addr.addr[3];
+        msg[22] = ble_addr.addr[4];
+        msg[23] = ble_addr.addr[5];
+        
         p_response->response = &msg[0];
-        p_response->length = 18;
+        p_response->length = 24;
         
         if (!configure_finished_successfull) {
             m_device_provisioned = true;
@@ -681,26 +690,20 @@ static void device_identification_start_cb(uint8_t attention_duration_s)
                      LED_BLINK_ATTENTION_COUNT(attention_duration_s));
 }
 
-static void device_identification_stop_cb()
-{
+static void device_identification_stop_cb() {
     __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "device_identification_stop_cb\n");
 }
 
-static void provisioning_aborted_cb(void)
-{
-
+static void provisioning_aborted_cb(void){
     __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "provisioning_aborted_cb\n");
-
     hal_led_blink_stop();
 }
 
-static void unicast_address_print(void)
-{
+static void unicast_address_print(void) {
     __LOG_RELEASE(LOG_SRC_APP, LOG_LEVEL_INFO, "Node Address: 0x%04x \n", node_address.address_start);
 }
 
-static void provisioning_complete_cb(void)
-{
+static void provisioning_complete_cb(void) {
     __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Successfully provisioned\n");
 
 #if MESH_FEATURE_GATT_ENABLED
@@ -715,6 +718,15 @@ static void provisioning_complete_cb(void)
     dsm_local_unicast_addresses_get(&node_address);
 
     unicast_address_print();
+
+#if NO_COMMISSIONING_TIMEOUT
+    commissioning_start_time = 0;
+    led1_config.on = true;
+    led1_config.level = LED_LEVEL_DEFAULT;
+    led1_config.min_level = 0;
+    led1_config.max_level = UINT16_MAX;
+    save_led_config();
+#endif
 
     hal_led_blink_stop();
     hal_led_mask_set(LEDS_MASK, LED_MASK_STATE_OFF);
@@ -754,7 +766,7 @@ static void reset_wdt_timer(void) {
     NRF_WDT->RR[0] = WDT_RR_RR_Reload;
 }
 
-
+static void schedule_event(uint32_t event_id);
 /********** checks ***********/
 
 
@@ -817,7 +829,7 @@ static void button_event_handler_irq(uint32_t button_number) {
     schedule_event(button_number);
 }
 
-void schedule_event(uint32_t event_id) {
+static void schedule_event(uint32_t event_id) {
     static uint8_t event;
     event = event_id;
     app_sched_event_put((void *)&event, sizeof(event), scheduled_event_handler);

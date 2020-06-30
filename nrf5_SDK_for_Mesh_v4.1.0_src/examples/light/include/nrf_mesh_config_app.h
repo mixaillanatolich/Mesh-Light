@@ -56,7 +56,7 @@
  */
 
 /** Device company identifier. */
-#define DEVICE_COMPANY_ID (ACCESS_COMPANY_ID_NORDIC)
+#define DEVICE_COMPANY_ID (ACCESS_COMPANY_M_TECHNOLOGIES)
 
 /** Device product identifier. */
 #define DEVICE_PRODUCT_ID (0x0001)

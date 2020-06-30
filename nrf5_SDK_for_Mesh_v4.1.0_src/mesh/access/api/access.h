@@ -73,7 +73,7 @@
 /** Company ID value for Bluetooth SIG opcodes or models. */
 #define ACCESS_COMPANY_ID_NONE (0xFFFF)
 /** Company ID value for Nordic Semiconductor. */
-#define ACCESS_COMPANY_ID_NORDIC (0x0059)
+//#define ACCESS_COMPANY_ID_NORDIC (0x0059)
 
 #define ACCESS_COMPANY_M_TECHNOLOGIES (0xF0A5)
 
